@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # dotfiles install script
-# 사용법: git clone <repo> ~/dotfiles && cd ~/dotfiles && ./install.sh
+# 사용법: git clone https://github.com/jinwhong/dotfiles.git ~/dotfiles && cd ~/dotfiles && ./install.sh
 # =============================================================================
 
 set -e
@@ -31,31 +31,33 @@ echo ""
 echo "[tmux] 설정 파일"
 link_file "$DOTFILES_DIR/.tmux.conf" "$HOME/.tmux.conf"
 
-# --- tmux 버전 확인 및 빌드 ---
+# --- tmux 버전 확인 및 설치 ---
 echo ""
 echo "[tmux] 버전 확인"
-CURRENT_TMUX=$(tmux -V 2>/dev/null | grep -oP '[\d.]+[a-z]?' || echo "없음")
+CURRENT_TMUX=$(tmux -V 2>/dev/null | grep -oE '[0-9]+\.[0-9]+[a-z]?' || echo "없음")
 echo "  현재: $CURRENT_TMUX / 필요: $TMUX_VERSION+"
 
 if [ "$CURRENT_TMUX" != "$TMUX_VERSION" ]; then
-    read -p "  tmux $TMUX_VERSION 소스 빌드 설치? (y/n) " -n 1 -r
+    read -p "  tmux $TMUX_VERSION 설치? (y/n) " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "  빌드 의존성 설치..."
-        sudo apt-get install -y libevent-dev ncurses-dev build-essential bison pkg-config
-
-        echo "  tmux $TMUX_VERSION 다운로드 및 빌드..."
-        cd /tmp
-        rm -rf "tmux-${TMUX_VERSION}"*
-        curl -sLO "https://github.com/tmux/tmux/releases/download/${TMUX_VERSION}/tmux-${TMUX_VERSION}.tar.gz"
-        tar xzf "tmux-${TMUX_VERSION}.tar.gz"
-        cd "tmux-${TMUX_VERSION}"
-        ./configure --prefix=/usr/local
-        make -j"$(nproc)"
-        sudo make install
-
-        echo "  tmux $TMUX_VERSION 설치 완료: $(tmux -V)"
-        cd "$DOTFILES_DIR"
+        if [[ "$(uname)" == "Darwin" ]]; then
+            echo "  macOS: brew install tmux..."
+            brew install tmux
+        else
+            echo "  Linux: 소스 빌드..."
+            sudo apt-get install -y libevent-dev ncurses-dev build-essential bison pkg-config
+            cd /tmp
+            rm -rf "tmux-${TMUX_VERSION}"*
+            curl -sLO "https://github.com/tmux/tmux/releases/download/${TMUX_VERSION}/tmux-${TMUX_VERSION}.tar.gz"
+            tar xzf "tmux-${TMUX_VERSION}.tar.gz"
+            cd "tmux-${TMUX_VERSION}"
+            ./configure --prefix=/usr/local
+            make -j"$(nproc)"
+            sudo make install
+            cd "$DOTFILES_DIR"
+        fi
+        echo "  tmux 설치 완료: $(tmux -V)"
     else
         echo "  건너뜀 (일부 기능이 동작하지 않을 수 있음)"
     fi
@@ -65,7 +67,7 @@ fi
 
 # --- TPM (Tmux Plugin Manager) ---
 echo ""
-echo "[tmux] 플러그인"
+echo "[tmux] 플러그인 매니저"
 if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
     echo "  TPM 설치 중..."
     git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
@@ -73,9 +75,20 @@ else
     echo "  TPM 이미 설치됨"
 fi
 
-# 플러그인 설치 (tmux 세션 밖에서도 동작)
-echo "  플러그인 설치 중 (resurrect, continuum)..."
-"$HOME/.tmux/plugins/tpm/bin/install_plugins" || true
+# --- Dracula 테마 (TPM 경로 충돌 방지를 위해 직접 설치) ---
+echo ""
+echo "[tmux] Dracula 테마"
+if [ ! -d "$HOME/.tmux/plugins/tmux-dracula" ]; then
+    echo "  Dracula 설치 중..."
+    git clone https://github.com/dracula/tmux.git "$HOME/.tmux/plugins/tmux-dracula"
+else
+    echo "  Dracula 이미 설치됨"
+fi
+
+# --- TPM 플러그인 설치 (resurrect, continuum) ---
+echo ""
+echo "[tmux] TPM 플러그인"
+"$HOME/.tmux/plugins/tpm/bin/install_plugins" 2>/dev/null || true
 
 # --- 새 dotfile 추가 시 여기에 ---
 # echo "[bash]"
