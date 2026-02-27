@@ -8,6 +8,11 @@ set -e
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 TMUX_VERSION="3.5a"
+OS="$(uname)"
+IS_WSL=false
+if [ "$OS" = "Linux" ] && grep -qi microsoft /proc/version 2>/dev/null; then
+    IS_WSL=true
+fi
 
 # 심볼릭 링크 생성 함수
 link_file() {
@@ -90,9 +95,56 @@ echo ""
 echo "[tmux] TPM 플러그인"
 "$HOME/.tmux/plugins/tpm/bin/install_plugins" 2>/dev/null || true
 
-# --- 새 dotfile 추가 시 여기에 ---
-# echo "[bash]"
-# link_file "$DOTFILES_DIR/.bashrc" "$HOME/.bashrc"
+# --- Ghostty 설정 ---
+echo ""
+echo "[ghostty] 설정 파일"
+mkdir -p "$HOME/.config/ghostty"
+link_file "$DOTFILES_DIR/.config/ghostty/config" "$HOME/.config/ghostty/config"
+
+# --- Claude Code keybindings ---
+echo ""
+echo "[claude] 키바인딩"
+mkdir -p "$HOME/.claude"
+link_file "$DOTFILES_DIR/.claude/keybindings.json" "$HOME/.claude/keybindings.json"
+
+# --- Nerd Font 설치 ---
+echo ""
+echo "[font] JetBrainsMono Nerd Font"
+FONT_NAME="JetBrainsMono"
+if fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd Font"; then
+    echo "  이미 설치됨"
+else
+    read -p "  JetBrainsMono Nerd Font 설치? (y/n) " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [[ "$OS" == "Darwin" ]]; then
+            echo "  macOS: brew install..."
+            brew install --cask font-jetbrains-mono-nerd-font
+        else
+            echo "  Linux: 직접 다운로드..."
+            FONT_DIR="$HOME/.local/share/fonts"
+            mkdir -p "$FONT_DIR"
+            FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${FONT_NAME}.tar.xz"
+            curl -sL "$FONT_URL" | tar xJ -C "$FONT_DIR"
+            fc-cache -f "$FONT_DIR"
+        fi
+        echo "  설치 완료"
+    else
+        echo "  건너뜀 (Ghostty에서 폰트가 표시되지 않을 수 있음)"
+    fi
+fi
+
+# --- 클립보드 도구 확인 (Linux) ---
+if [[ "$OS" == "Linux" ]] && [ "$IS_WSL" = false ]; then
+    echo ""
+    echo "[clipboard] xclip 확인"
+    if command -v xclip &>/dev/null; then
+        echo "  xclip OK"
+    else
+        echo "  ⚠ xclip 미설치 — tmux 복사가 시스템 클립보드에 연결되지 않음"
+        echo "  설치: sudo apt install xclip"
+    fi
+fi
 
 echo ""
 echo "=== 완료! ==="
