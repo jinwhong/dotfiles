@@ -107,6 +107,11 @@ echo "[claude] 키바인딩"
 mkdir -p "$HOME/.claude"
 link_file "$DOTFILES_DIR/.claude/keybindings.json" "$HOME/.claude/keybindings.json"
 
+# --- Claude Code skills ---
+echo ""
+echo "[claude] 스킬"
+link_file "$DOTFILES_DIR/.claude/skills" "$HOME/.claude/skills"
+
 # --- Nerd Font 설치 ---
 echo ""
 echo "[font] JetBrainsMono Nerd Font"
