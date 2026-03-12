@@ -5,7 +5,15 @@
     {
       "context": "Chat",
       "bindings": {
-        "shift+enter": "chat:newline"
+        "shift+enter": "chat:newline",
+        "ctrl+m": "chat:modelPicker",
+        "ctrl+s": "chat:stash"
+      }
+    },
+    {
+      "context": "Task",
+      "bindings": {
+        "ctrl+b": "task:background"
       }
     }
   ]

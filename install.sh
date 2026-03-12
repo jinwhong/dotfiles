@@ -101,16 +101,51 @@ echo "[ghostty] 설정 파일"
 mkdir -p "$HOME/.config/ghostty"
 link_file "$DOTFILES_DIR/.config/ghostty/config" "$HOME/.config/ghostty/config"
 
-# --- Claude Code keybindings ---
+# --- Claude Code 전체 설정 ---
+echo ""
+echo "[claude] 설정 파일"
+mkdir -p "$HOME/.claude"
+
+# settings.json은 머신별 상태가 추가되므로 심볼릭 링크가 아닌 복사
+if [ ! -f "$HOME/.claude/settings.json" ]; then
+    cp "$DOTFILES_DIR/.claude/settings.json" "$HOME/.claude/settings.json"
+    echo "  복사: settings.json (최초 설치)"
+else
+    echo "  settings.json 이미 존재 — 건너뜀 (수동 병합 필요 시: diff $DOTFILES_DIR/.claude/settings.json $HOME/.claude/settings.json)"
+fi
+
 echo ""
 echo "[claude] 키바인딩"
-mkdir -p "$HOME/.claude"
 link_file "$DOTFILES_DIR/.claude/keybindings.json" "$HOME/.claude/keybindings.json"
 
-# --- Claude Code skills ---
+echo ""
+echo "[claude] CLAUDE.md (글로벌 지침)"
+link_file "$DOTFILES_DIR/.claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+
+echo ""
+echo "[claude] Hooks (자동화 스크립트)"
+mkdir -p "$HOME/.claude/hooks"
+for hook_script in "$DOTFILES_DIR/.claude/hooks/"*.sh; do
+    if [ -f "$hook_script" ]; then
+        link_file "$hook_script" "$HOME/.claude/hooks/$(basename "$hook_script")"
+        chmod +x "$HOME/.claude/hooks/$(basename "$hook_script")"
+    fi
+done
+
 echo ""
 echo "[claude] 스킬"
 link_file "$DOTFILES_DIR/.claude/skills" "$HOME/.claude/skills"
+
+# --- Claude Code Memory (프로젝트별) ---
+echo ""
+echo "[claude] Memory 템플릿"
+if [ -d "$DOTFILES_DIR/.claude/memory" ]; then
+    echo "  memory 템플릿이 dotfiles에 있습니다."
+    echo "  프로젝트별 memory를 설정하려면:"
+    echo "    1. Claude Code에서 프로젝트를 열면 자동으로 memory 경로가 생성됩니다"
+    echo "    2. 템플릿 복사: cp $DOTFILES_DIR/.claude/memory/*.md ~/.claude/projects/<project-path>/memory/"
+    echo "    3. 또는 Claude Code에서 '내 memory 복원해줘'라고 요청하세요"
+fi
 
 # --- Nerd Font 설치 ---
 echo ""
@@ -159,3 +194,8 @@ echo "  - tmux 서버 재시작 필요: tmux kill-server && tmux new -s main"
 echo "  - 세션 저장: prefix + Ctrl-s"
 echo "  - 세션 복원: prefix + Ctrl-r"
 echo "  - 윈도우 전환: Ctrl+Shift+←/→"
+echo ""
+echo "Claude Code:"
+echo "  - 설정 완료: settings, keybindings, CLAUDE.md, hooks, skills"
+echo "  - Memory 복원: Claude Code에서 '내 memory 복원해줘'라고 요청"
+echo "  - 단축키: Ctrl+M(모델 전환), Ctrl+S(프롬프트 저장), Ctrl+B(백그라운드)"
